@@ -7,6 +7,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms, utils
+from PIL import Image
+import json
+import cv2
 
 
 ############ FACE LANDMARKS DATASET ##########################
@@ -44,6 +47,7 @@ class FaceLandmarksDataset(Dataset):
             sample = self.transform(sample)
 
         return sample
+
 
 ############ END FACE LANDMARKS DATASET ##########################
 
@@ -111,7 +115,7 @@ class RandomCrop(object):
         left = np.random.randint(0, w - new_w)
 
         image = image[top: top + new_h,
-                      left: left + new_w]
+                left: left + new_w]
 
         landmarks = landmarks - [left, top]
 
@@ -131,6 +135,80 @@ class ToTensor(object):
         return {'image': torch.from_numpy(image),
                 'landmarks': torch.from_numpy(landmarks)}
 
+
 ############ END FACE LANDMARKS DATASET TRANSFORMS ##########################
 
+########### CITYSCAPES DATASET ###############################
+class CityScapesDataset(Dataset):
+
+    def __init__(self, json_dir, img_dir, classes, transform=None):
+        """
+        Args:
+            json_dir (string): Directory to the annotations.
+            img_dir (string): Directory with all the images.
+            transform (callable, optional): Optional transform to be applied
+                on a sample.
+        """
+        self.json_dir = json_dir
+        self.img_dir = img_dir
+        self.jsons = list([f for f in sorted(os.listdir(json_dir)) if f.endswith('.json')])
+        self.images = list(sorted(os.listdir(img_dir)))
+        self.transform = transform
+        self.classes = classes
+
+    def __len__(self):
+        return len(self.images)
+
+    def __getitem__(self, idx):
+        img = Image.open(os.path.join(self.img_dir, self.images[idx])).convert("RGB")
+
+        with open(os.path.join(self.json_dir, self.jsons[idx])) as f:
+            data = json.load(f)
+
+        h = data['imgHeight']
+        w = data['imgWidth']
+
+        # creacion de las mascaras de los objetos indicados
+        masks = np.zeros((h, w, 1), dtype=np.uint8)
+        mask = np.zeros((h, w), dtype=np.uint8)
+        boxes = []
+        labels = []
+        for object in data['objects']:
+            if object['label'] in self.classes:
+                idx = self.classes.index(object['label'])
+                points = np.array(object['polygon'], np.int32)
+                mask = cv2.fillConvexPoly(mask, points, 255)
+                masks = np.concatenate((masks, np.expand_dims(mask, axis=-1)), axis=-1)
+
+                # cálculo de los bbx de los objetos
+                points = object["polygon"]
+                points = np.array(points, np.int32)
+                tag = self.classes.index(object["label"])
+                x, y, w, h = cv2.boundingRect(np.array(points))
+                x_min = x
+                x_max = x + w
+                y_min = y
+                y_max = y + h
+                boxes.append([x_min, y_min, x_max, y_max])
+                labels.append(tag)
+
+        masks = torch.as_tensor(masks, dtype=torch.uint8)
+        boxes = torch.as_tensor(boxes, dtype=torch.float32)
+        labels = torch.as_tensor(labels, dtype=torch.int64)
+        image_id = torch.tensor([idx])
+        area = (boxes[:, 3] - boxes[:, 1]) * (boxes[:, 2] - boxes[:, 0])
+        iscrowd = torch.zeros((len(labels),), dtype=torch.int64)
+
+        target = {}
+        target["boxes"] = boxes
+        target["labels"] = labels
+        target["masks"] = masks
+        target["image_id"] = image_id
+        target["area"] = area
+        target["iscrowd"] = iscrowd
+
+        if self.transform is not None:
+            img, target = self.transform(img, target)
+
+        return img, target
 
