@@ -18,8 +18,8 @@ if __name__ == '__main__':
     json_path = "data/cityscapes/gtFine_trainvaltest/gtFine/train/bochum"
     img_path = "data/cityscapes/leftImg8bit_trainvaltest/leftImg8bit/train/bochum"
 
-    dataset = CityScapesDataset(json_dir=json_path, img_dir=img_path, classes=['road', 'car'])
-    data_loader_test = torch.utils.data.DataLoader(dataset, batch_size=2, shuffle=True, collate_fn=dataLoaderCitysCapes)
+    dataset_test = CityScapesDataset(json_dir=json_path, img_dir=img_path, classes=['road', 'car'])
+    data_loader_test = torch.utils.data.DataLoader(dataset_test, batch_size=1, shuffle=True, collate_fn=dataLoaderCitysCapes)
 
     num_classes = 3
     model = models.get_model_instance_segmentation(num_classes)
@@ -35,7 +35,7 @@ if __name__ == '__main__':
                                                    gamma=0.1)
     loss_fn = nn.CrossEntropyLoss()
 
-    num_epochs = 10
+    num_epochs = 5
 
     for epoch in range(num_epochs):
         # train_test.train(data_loader, model, loss_fn, optimizer, device)

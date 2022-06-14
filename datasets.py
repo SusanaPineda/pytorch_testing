@@ -161,8 +161,7 @@ class CityScapesDataset(Dataset):
 
     def __getitem__(self, idx):
         from PIL import Image
-        img = io.imread(os.path.join(self.img_dir, self.images[idx]))
-        # img = Image.open(os.path.join(self.img_dir, self.images[idx])).convert("RGB")
+        img = io.imread(os.path.join(self.img_dir, self.images[idx]))/255.
 
         with open(os.path.join(self.json_dir, self.jsons[idx])) as f:
             data = json.load(f)
