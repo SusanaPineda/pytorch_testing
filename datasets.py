@@ -160,7 +160,9 @@ class CityScapesDataset(Dataset):
         return len(self.images)
 
     def __getitem__(self, idx):
+        from PIL import Image
         img = io.imread(os.path.join(self.img_dir, self.images[idx]))
+        # img = Image.open(os.path.join(self.img_dir, self.images[idx])).convert("RGB")
 
         with open(os.path.join(self.json_dir, self.jsons[idx])) as f:
             data = json.load(f)
@@ -169,7 +171,7 @@ class CityScapesDataset(Dataset):
         w = data['imgWidth']
 
         # creacion de las mascaras de los objetos indicados
-        masks = np.zeros((h, w, 1), dtype=np.uint8)
+        masks = np.zeros((1, h, w), dtype=np.uint8)
         mask = np.zeros((h, w), dtype=np.uint8)
         boxes = []
         labels = []
@@ -177,8 +179,8 @@ class CityScapesDataset(Dataset):
             if object['label'] in self.classes:
                 idx = self.classes.index(object['label'])
                 points = np.array(object['polygon'], np.int32)
-                mask = cv2.fillConvexPoly(mask, points, 255)
-                masks = np.concatenate((masks, np.expand_dims(mask, axis=-1)), axis=-1)
+                mask = cv2.fillConvexPoly(mask, points, 255) / 255.0
+                masks = np.concatenate((masks, np.expand_dims(mask, axis=0)), axis=0)
 
                 # cálculo de los bbx de los objetos
                 points = object["polygon"]
@@ -192,6 +194,7 @@ class CityScapesDataset(Dataset):
                 boxes.append([x_min, y_min, x_max, y_max])
                 labels.append(tag)
 
+        masks = masks[1:, :, :]
         masks = torch.as_tensor(masks, dtype=torch.uint8)
         boxes = torch.as_tensor(boxes, dtype=torch.float32)
         labels = torch.as_tensor(labels, dtype=torch.int64)
@@ -209,6 +212,11 @@ class CityScapesDataset(Dataset):
 
         if self.transform is not None:
             img, target = self.transform(img, target)
+        img = np.transpose(img, (2, 0, 1))
 
         return img, target
 
+
+##################CITYSCAPES DATALOADER ##########################
+def dataLoaderCitysCapes(batch):
+    return tuple(zip(*batch))

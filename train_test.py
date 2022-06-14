@@ -1,15 +1,23 @@
 import torch
 
 
+
 def train(dataloader, model, loss_fn, optimizer, device):
     size = len(dataloader.dataset)
     model.train()
     for batch, (X, y) in enumerate(dataloader):
-        X, y = X.to(device), y.to(device)
+        # print(str(batch))
+        X = list(torch.as_tensor(image, dtype=torch.float32).to(device)/255. for image in X)
+        y = [{k: v.to(device) for k, v in t.items()} for t in y]
 
-        # Compute prediction error
-        pred = model(X)
-        loss = loss_fn(pred, y)
+        with torch.cuda.amp.autocast(enabled=False):
+            loss_dict = model(X, y)
+            losses = sum(loss for loss in loss_dict.values())
+            loss = losses
+
+            # Compute prediction error
+            # pred = model(X, y)
+            # loss = loss_fn(pred, y)
 
         # Backpropagation
         optimizer.zero_grad()
