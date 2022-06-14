@@ -160,7 +160,7 @@ class CityScapesDataset(Dataset):
         return len(self.images)
 
     def __getitem__(self, idx):
-        img = Image.open(os.path.join(self.img_dir, self.images[idx])).convert("RGB")
+        img = io.imread(os.path.join(self.img_dir, self.images[idx]))
 
         with open(os.path.join(self.json_dir, self.jsons[idx])) as f:
             data = json.load(f)
