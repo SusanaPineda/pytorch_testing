@@ -149,10 +149,12 @@ class CityScapesDataset(Dataset):
             transform (callable, optional): Optional transform to be applied
                 on a sample.
         """
-        self.json_dir = json_dir
-        self.img_dir = img_dir
-        self.jsons = list([f for f in sorted(os.listdir(json_dir)) if f.endswith('.json')])
-        self.images = list(sorted(os.listdir(img_dir)))
+        txt_json = open(json_dir)
+        self.jsons = txt_json.readlines()
+        txt_img = open(img_dir)
+        self.images = txt_img.readlines()
+        #self.jsons = list([f for f in sorted(os.listdir(json_dir)) if f.endswith('.json')])
+        #self.images = list(sorted(os.listdir(img_dir)))
         self.transform = transform
         self.classes = classes
 

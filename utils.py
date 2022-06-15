@@ -280,3 +280,18 @@ def init_distributed_mode(args):
     )
     torch.distributed.barrier()
     setup_for_distributed(args.rank == 0)
+
+
+def get_data(path, out, flag):
+    file = open(out, "w")
+    d0 = sorted(os.listdir(path))
+    for d1 in d0:
+        d2 = sorted(os.listdir(os.path.join(path, d1)))
+        for d in d2:
+            if flag == "labels":
+                if d.endswith(".json"):
+                    file.write(str(os.path.join(path, os.path.join(d1, d))) + "\n")
+            else:
+                file.write(str(os.path.join(path, os.path.join(d1, d)))+"\n")
+
+    file.close()
