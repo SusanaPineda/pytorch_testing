@@ -7,14 +7,14 @@ from engine import train_one_epoch, evaluate
 if __name__ == '__main__':
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
-    json_path = "data/cityscapes/gtFine_trainvaltest/gtFine/train/aachen"
-    img_path = "data/cityscapes/leftImg8bit_trainvaltest/leftImg8bit/train/aachen"
+    json_path = "train_json.txt"
+    img_path = "train_img.txt"
 
     dataset = CityScapesDataset(json_dir=json_path, img_dir=img_path, classes=['road', 'car'])
     data_loader = torch.utils.data.DataLoader(dataset, batch_size=2, shuffle=True, collate_fn=dataLoaderCitysCapes)
 
-    json_path = "data/cityscapes/gtFine_trainvaltest/gtFine/train/bochum"
-    img_path = "data/cityscapes/leftImg8bit_trainvaltest/leftImg8bit/train/bochum"
+    json_path = "test_json.txt"
+    img_path = "test_img.txt"
 
     dataset_test = CityScapesDataset(json_dir=json_path, img_dir=img_path, classes=['road', 'car'])
     data_loader_test = torch.utils.data.DataLoader(dataset_test, batch_size=1, shuffle=True, collate_fn=dataLoaderCitysCapes)
